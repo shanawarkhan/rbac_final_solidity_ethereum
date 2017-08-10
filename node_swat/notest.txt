@@ -1,0 +1,139 @@
+URL:// https://blog.nodeswat.com/implement-access-control-in-node-js-8567e7b484d1
+
+
+The logic of a basic RBAC model
+===============================
+===============================
+
+— You define a number of roles 
+- Each role has privileges assigned to it
+- When checking for access you check if the role has access and that’s it
+
+
+- Operational privileges are grouped into roles and each user is assigned a role. 
+- The role, instead of the individual, is the basis for access checks.
+- It is often implemented in a hierarchical model, where higher level roles
+  inherit the privileges from lower levels.
+
+ - The logic of a basic RBAC model is simple — you define a number of roles and each role has privileges assigned to it. When checking for access you check if the role has access and that’s it.
+
+File: rbac-1.js
+
+		let roles = {
+		    manager: {
+		        can: ['read', 'write', 'publish']
+		    },
+		    writer: {
+		        can: ['read', 'write']
+		    },
+		    guest: {
+		        can: ['read']
+		    }
+		}
+
+		function can(role, operation) {
+		    return roles[role] && roles[role].can.indexOf(operation) !== -1;
+		}
+
+
+// callback
+		> roles.manager.can.indexOf('publish');
+
+
+
+- Let’s give the above function a configurable and reusable form in the manner of a class
+
+File: role-class.js
+
+		class RBAC {
+		    constructor(roles) {
+		        if(typeof roles !== 'object') {
+		            throw new TypeError('Expected an object as input');
+		        }
+		        this.roles = roles;
+		    }
+		  
+		    can(role, operation) {
+		        return this.roles[role] && this.roles[role].can.indexOf(operation) !== -1;
+		    }
+		}
+
+		module.exports = RBAC;
+
+
+- This leaves us with a very simple module for defining and checking roles. 
+- Let’s not stop here — we will add hierarchy to the model so that we can manage roles more easily 
+  when adding new operations to the system.
+
+- This way there is no need to define rights to every operation for each role separately.
+- It’ll allow the user to represent a list of child roles, where to inherit permissions from.
+
+File: role-definition.js
+
+		let roles = {
+		    manager: {
+		        can: ['publish'],
+		        inherits: ['writer']
+		    },
+		    writer: {
+		        can: ['write'],
+		        inherits: ['guest']
+		    },
+		    guest: {
+		        can: ['read']
+		    }
+		}
+
+
+
+- In HRBAC model, the access checking begins with the current role, checks if it has access, if not then moves up to the parent and checks again. This happens until a permission is found or there are no more parents to check. So we can rewrite our checking functionality to use recursive logic:
+
+File: rbac-can2.js
+
+can(role, operation) {
+    // Check if role exists
+    if(!this.roles[role]) {
+        return false;
+    }
+    let $role = this.roles[role];
+    // Check if this role has access
+    if($role.can.indexOf(operation) !== -1) {
+        return true;
+    }
+    // Check if there are any parents
+    if(!$role.inherits || $role.inherits.length < 1) {
+        return false;
+    }
+  
+    // Check child roles until one returns true or all return false
+    return $role.inherits.some(childRole => this.can(childRole, operation));
+}
+
+
+
+
+- There are still real use cases that we haven’t accounted for. 
+- Let me give you an example based on a blogging platform where a writer can create a blog post and then open it up for editing — should the writer role also allow to rewrite every post in the system? Probably not. We need to first check if they are the owner of the post. But how can we write that into a reusable definition — functions? To answer this, let’s allow operations to define functions that need to pass.
+
+File: role-definitions-w-function.js
+
+		let roles = {
+		    manager: {
+		        can: ['publish'],
+		        inherits: ['writer']
+		    },
+		    writer: {
+		        can: ['write', {
+		            name: 'edit',
+		            when: function (params) {
+		                return params.user.id === params.post.owner;
+		            }
+		        }],
+		        inherits: ['guest']
+		    },
+		    guest: {
+		        can: ['read']
+		    }
+		}
+
+

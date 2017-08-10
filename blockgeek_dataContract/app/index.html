@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Youtube Web3</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<script src="./node_modules/web3/dist/web3.js"></script>
+	<script src="./node_modules/jquery/dist/jquery.min.js"></script>
+</head>
+<body>
+
+	<input type="number" name="id" id="id" placeholder="Customer ID"/>
+	<input type="text" name="name" id="name" placeholder="Customer Name" />
+	<input type="date" name="dateOfBirth" id="dateOfBirth" placeholder="Customer Date Of Birth" />
+	<input type="number" name="social" id="social" placeholder="Customer Social Security Number" />
+	<input type="button" id="button" value="Create Customer">
+
+
+
+	<script>
+		var web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+		var version = web3.version.api;
+		console.log(web3);
+		console.log(version);
+
+
+		web3.eth.defaultAccount = web3.eth.accounts[0];
+		console.log(web3.eth.defaultAccount);
+
+
+	    var customerContract = web3.eth.contract([{"constant":true,"inputs":[],"name":"count","outputs":[{"name":"","type":"uint256"}],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"index","type":"uint256"},{"name":"name","type":"string"}],"name":"updateCustomer","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"index","type":"uint256"},{"name":"status","type":"uint256"}],"name":"updateCustomerStatus","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"id","type":"uint256"},{"name":"name","type":"string"},{"name":"dateOfBirth","type":"uint256"},{"name":"social","type":"uint256"}],"name":"createCustomer","outputs":[],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"index","type":"uint256"}],"name":"getCustomer","outputs":[{"name":"id","type":"uint256"},{"name":"name","type":"string"},{"name":"dateOfBirth","type":"uint256"},{"name":"social","type":"uint256"},{"name":"status","type":"uint256"}],"payable":false,"type":"function"},{"constant":true,"inputs":[{"name":"id","type":"uint256"}],"name":"getCustomerById","outputs":[{"name":"idRet","type":"uint256"},{"name":"name","type":"string"},{"name":"dateOfBirth","type":"uint256"},{"name":"social","type":"uint256"},{"name":"status","type":"uint256"}],"payable":false,"type":"function"}]);
+
+    	var customer = customerContract.at("0xbde95422681e4c3984635af2f2f35f8c44a4ddc9");
+
+	    function register(){
+			var txn = customer.createCustomer($("id").val(), $ ("name").val(), $("dob").val(), $("social").val(), {gas:144840});
+			console.log(txn);
+		}
+
+		// var id = document.getElementById("id");
+		// var name = document.getElementById("name");
+		// var dateOfBirth = document.getElementById("dateOfBirth");
+		// var social = document.getElementById("social");
+		// var button = document.getElementById("button");
+
+		// button.addEventListener('click', function() {
+		// 	customer.createCustomer(id.value, name.value, dateOfBirth.value, social.value);
+		// 	console.log(customer.getCustomer(0));
+		// })
+
+	</script>
+
+
+	
+</body>
+
+</html>
